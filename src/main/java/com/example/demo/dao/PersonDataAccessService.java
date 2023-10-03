@@ -14,31 +14,56 @@ public class PersonDataAccessService implements PersonDao{
 
     @Override
     public int insertPerson(UUID id, Person person) {
-        return 0;
+        String sql = "insert into persons ( id, name ) values ( ?, ? )";
+        List<String> params = new ArrayList<>();
+        params.add(id.toString());
+        params.add(person.getName());
+
+        return jdbcTemplate.update(sql, params.toArray());
     }
 
     @Override
     public List<Person> selectAllPeople() {
-        String sql = "select name from persons";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Person p = new Person(UUID.randomUUID(), rs.getString("name"));
-            return p;
+        String sql = "select * from persons";
+
+        return jdbcTemplate.query(sql, (rs, i) -> {
+            UUID id = UUID.fromString(rs.getString("id"));
+            String name = rs.getString("name");
+            return new Person(id, name);
         });
-//        return Collections.singletonList(new Person(UUID.randomUUID(), "FROM POSTGRES DB"));
     }
 
     @Override
     public Optional<Person> selectPersonById(UUID id) {
-        return Optional.empty();
+        String sql = "select * from persons where id = ?";
+        List<String> params = new ArrayList<>();
+        params.add(id.toString());
+        Person person = jdbcTemplate.queryForObject(
+                sql,
+                (rs, i) -> {
+                    UUID personId = UUID.fromString(rs.getString("id"));
+                    String name = rs.getString("name");
+                    return new Person(personId, name);
+                },
+                params.toArray());
+
+        return Optional.ofNullable(person);
     }
 
     @Override
     public int deletePersonById(UUID id) {
-        return 0;
+        String sql = "delete from persons where id = ?";
+
+        return jdbcTemplate.update(sql, id.toString());
     }
 
     @Override
     public int updatePersonById(UUID id, Person person) {
-        return 0;
+        String sql = "update persons set name = ? where id = ?";
+        List<String> params = new ArrayList<>();
+        params.add(person.getName());
+        params.add(id.toString());
+
+        return jdbcTemplate.update(sql, params.toArray()) ;
     }
 }
