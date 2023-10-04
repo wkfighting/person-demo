@@ -2,10 +2,12 @@ package com.example.demo.dao;
 
 import com.example.demo.model.Person;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 @Repository("mysql")
 public class PersonDataAccessService implements PersonDao{
@@ -38,14 +40,19 @@ public class PersonDataAccessService implements PersonDao{
         String sql = "select * from persons where id = ?";
         List<String> params = new ArrayList<>();
         params.add(id.toString());
-        Person person = jdbcTemplate.queryForObject(
-                sql,
-                (rs, i) -> {
-                    UUID personId = UUID.fromString(rs.getString("id"));
-                    String name = rs.getString("name");
-                    return new Person(personId, name);
-                },
-                params.toArray());
+        Person person;
+        try {
+            person = jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, i) -> {
+                        UUID personId = UUID.fromString(rs.getString("id"));
+                        String name = rs.getString("name");
+                        return new Person(personId, name);
+                    },
+                    params.toArray());
+        } catch (EmptyResultDataAccessException e) {
+            person = null;
+        }
 
         return Optional.ofNullable(person);
     }
